@@ -377,21 +377,11 @@
             tpr.patInfo.PatName = '';
             tpr.patInfo.Sex = '';
             tpr.patInfo.Birthday = '';
-            tpr.tprData.PatNO = '';
-            tpr.tprData.MonitorDate = '';
-            tpr.tprData.MonitorTime = '';
-            tpr.tprData.Temperature = '';
-            tpr.tprData.Weight = '';
-            tpr.tprData.Pulse = '';
-            tpr.tprData.Breath = '';
-            tpr.tprData.DBP = '';
-            tpr.tprData.SBP = '';
-            tpr.tprData.SPO2 = '';
+            tpr.clearInput();
             tpr.chartData.rows = [];
             tpr.v_date = '';
             tpr.dataEmpty = true;
             tpr.show = false;
-            tpr.CurrentIndex = 1;
         },
 
         showMessage: function (msg, type) {
