@@ -1,0 +1,202 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!--Vue導入-->
+    <script src="Scripts/vue.js"></script>
+    <!--vcharts cdn-->
+    <script src="Scripts/echarts.min.js"></script>
+    <script src="Scripts/numeral.js"></script>
+    <script src="Scripts/index.min.js"></script>
+    <link href="style.min.css" rel="stylesheet" />
+    <!--CSS導入-->
+    <link href="TPR.css" rel="stylesheet" />
+    <link href="Content/bootstrap.min.css" rel="stylesheet" />
+
+    <title>住院病人生理監測</title>
+</head>
+<body>
+    <div id="work">
+        <div id="header" class="container">
+            <transition name="fade">
+                <div id="succ" class="alert" v-bind:class="type" role="alert" v-if="ms">
+                    {{message}}
+                </div>
+            </transition>
+        </div>
+        <div id="content">
+            <div id="border" class="rounded">
+                <div class="row">
+                    <div id="title" class="font-weight-bold" style="font-size:30px">
+                        住院病人生理監測
+                    </div>
+                    <div class="col align-self-center"></div>
+                    <div class="col align-self-end">
+                        <button type="button" class="btn btn-primary" v-on:click="insertPatientInfo" v-if="dis_save">存檔</button>
+                        <button type="button" class="btn btn-primary" v-on:click="update" v-if="dis_update">更新</button>
+                        <button type="button" class="btn btn-danger" v-on:click="del" v-if="dis_update">刪除</button>
+                        <button type="button" class="btn btn-outline-secondary" v-on:click="newdata" v-if="dis_update">新增</button>
+                    </div>
+                </div>
+                <div id="ns1" class="form-inline">
+                    病歷號:
+                    <input type="number" class="form-control" id="patID" @input="limit(5)" v-model="id" />
+                    <button type="button" id="search" class="btn btn-primary" v-on:click="getPatientInfo">查詢</button>
+                    <input type="text" size="8" class="form-control" id="patName" v-model="patInfo.PatName" disabled="disabled" />
+                    <img v-bind:src='img_src' class="mr-3" id="seximg" v-bind:alt="patInfo.Sex" />
+                    <input type="text" size="12" class="form-control" id="birthday" v-model="patInfo.Birthday" disabled="disabled" />
+                </div>
+                <div id="ns2" class="row">
+                    監測時間:
+                    <input type="date" class="form-control" id="date" v-model="date" />
+                    <input type="time" class="form-control" id="time" v-model="time" />
+                </div>
+                <p></p>
+                <div id="ns3" class="row">
+                    <div class="col">
+                        <p class="row">
+                            體溫:<input type="number" class="form-control" step="0.1" id="temp" v-bind:style="{'background' : (tprData.Temperature<38&&tprData.Temperature>36||tprData.Temperature=='') ? '#ffffff': '#ff9999'}" v-model="tprData.Temperature" />度
+                        </p>
+                    </div>
+                    <div class="col">
+                        <p class="row">
+                            體重:<input type="number" class="form-control" id="weight" v-model="tprData.Weight" />kg
+                        </p>
+                    </div>
+                </div>
+                <div id="ns4" class="row">
+                    <div class="col">
+                        <p class="row">
+                            心跳:<input type="number" class="form-control" id="pulse" v-bind:style="{'background' :(tprData.Pulse<100||tprData.Pulse=='') ? '#ffffff' : '#ff9999'}" v-model="tprData.Pulse" />下
+                        </p>
+                    </div>
+                    <div class="col">
+                        <p class="row">
+                            呼吸:<input type="number" class="form-control" id="breath" v-bind:style="{'background' : (tprData.Breath<30||tprData.Breath=='') ? '#ffffff' : '#ff9999'}" v-model="tprData.Breath" />下
+                        </p>
+                    </div>
+                </div>
+                <div id="ns5" class="row">
+                    <div class="col">
+                        <p class="row">
+                            舒張壓:<input type="number" class="form-control" id="dbp" v-bind:style="{'background' : (tprData.DBP<90||tprData.DBP=='') ? '#ffffff' : '#ff9999'}" v-model="tprData.DBP" />mmHg
+                        </p>
+                    </div>
+                    <div class="col">
+                        <p class="row">
+                            收縮壓:<input type="number" class="form-control" id="sbp" v-bind:style="{'background' : (tprData.SBP<140||tprData.SBP=='') ? '#ffffff' : '#ff9999'}" v-model="tprData.SBP" />mmHg
+                        </p>
+                    </div>
+                </div>
+                <div id="ns6" class="row">
+                    <div class="col">
+                        <p class="row">
+                            SpO2:<input type="number" class="form-control" id="spo2" v-bind:style="{'background' : (tprData.SPO2>94||tprData.SPO2=='') ? '#ffffff' : '#ff9999'}" v-model="tprData.SPO2" />%
+                        </p>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="exampleModalLabel">詳細資料</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body  p-3 mb-2">
+                                <table class="table table-bordered table-hover table-responsive-sm table-sm">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>監測日期</th>
+                                            <th>體溫</th>
+                                            <th>體重</th>
+                                            <th>心跳</th>
+                                            <th>呼吸</th>
+                                            <th>舒張壓</th>
+                                            <th>收縮壓</th>
+                                            <th>SpO2</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="row in detailDataRows">
+                                            <td>
+                                                {{row.日期}}
+                                            </td>
+                                            <td v-bind:class="{'table-danger': (row.體溫<38&&row.體溫>36||row.體溫=='') ? false: true}">
+                                                {{row.體溫}}
+                                            </td>
+                                            <td>
+                                                {{row.體重}}
+                                            </td>
+                                            <td v-bind:class="{'table-danger': (row.心跳<100||row.心跳=='') ? false: true}">
+                                                {{row.心跳}}
+                                            </td>
+                                            <td v-bind:class="{'table-danger': (row.呼吸<30||row.呼吸=='') ? true: false}">
+                                                {{row.呼吸}}
+                                            </td>
+                                            <td v-bind:class="{'table-danger': (row.舒張壓<90||row.舒張壓=='') ? false: true}">
+                                                {{row.舒張壓}}
+                                            </td>
+                                            <td v-bind:class="{'table-danger': (row.收縮壓<140||row.收縮壓=='') ? false: true}">
+                                                {{row.收縮壓}}
+                                            </td>
+                                            <td v-bind:class="{'table-danger': (row.SpO2>94||row.SpO2=='') ? false: true}">
+                                                {{row.SpO2}}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="row justify-content-center mb-5">
+                                <nav aria-label="Page navigation">
+                                    <ul class="pagination">
+                                        <li class="page-item"><a class="page-link clickable" href="#" v-if="CurrentIndex>1 && detailTotalPage>0" v-on:click="CurrentIndex=1">&laquo;</a></li>
+                                        <li class="page-item"><a class="page-link clickable" href="#" v-if="CurrentIndex>1 && detailTotalPage>0" v-on:click="CurrentIndex--">&lsaquo;</a></li>
+                                        <li v-bind:class="{'page-item':true,'active':CurrentIndex==page_index,'clickable':true}" v-for="page_index in pages(CurrentIndex)"><a class="page-link" href="#" v-on:click="CurrentIndex=page_index">{{page_index}}</a></li>
+                                        <li class="page-item"><a class="page-link clickable" href="#" v-if="CurrentIndex < detailTotalPage && detailTotalPage>0" v-on:click="CurrentIndex++">&rsaquo;</a></li>
+                                        <li class="page-item"><a class="page-link clickable" href="#" v-if="CurrentIndex < detailTotalPage && detailTotalPage>0" v-on:click="CurrentIndex=detailTotalPage">&raquo;</a></li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--vcharts-->
+                <div id="border1" class="rounded">
+                    <div id="ns7" class="form-row">
+                        <div class="col d-flex justify-content-start">
+                            <button type="button" class="btn btn-info" v-if="show" data-toggle="modal" data-target="#exampleModal" onclick="$('#exampleModal').modal('show')">詳細</button>
+                        </div>
+                        <div class="col d-flex justify-content-end">
+                            <div class="auto">
+                                <div class="form-row" style="margin-top:10px">
+                                    <button type="button" class="btn btn-light" v-on:click="nextweek(-1)" v-if="show"><</button>
+                                    <span class="text-secondary h6" style="margin-top:10px">{{v_date}}</span>
+                                    <button type="button" class="btn btn-light" style="margin-right:20px" v-on:click="nextweek(1)" v-if="show">></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="app" class="row">
+                        <div class="col">
+                            <ve-line v-bind:data="chartData" v-bind:data-zoom="dataZoom" style="margin-right:70px" v-bind:events="chartEvents" v-bind:loading="loading" v-bind:data-empty="dataEmpty"></ve-line>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="Scripts/jquery-3.4.1.min.js"></script>
+    <script src="Scripts/popper.min.js"></script>
+    <script src="Scripts/bootstrap.min.js"></script>
+    <script src="Scripts/JavaScript.js"></script>
+
+</body>
+</html>
